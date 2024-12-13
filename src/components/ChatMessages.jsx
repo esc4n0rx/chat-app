@@ -21,10 +21,10 @@ const ChatMessages = ({ messages }) => {
                 code({ node, inline, className, children, ...props }) {
                   const match = /language-(\w+)/.exec(className || '');
                   const codeContent = String(children).replace(/\n$/, '');
-                  
+
                   if (!inline && match) {
                     return (
-                      <CodeBlockWithCopy
+                      <CodeBlockWithModal
                         code={codeContent}
                         language={match[1]}
                         {...props}
@@ -49,7 +49,8 @@ const ChatMessages = ({ messages }) => {
   );
 };
 
-const CodeBlockWithCopy = ({ code, language }) => {
+const CodeBlockWithModal = ({ code, language }) => {
+  const [isModalOpen, setModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -58,26 +59,61 @@ const CodeBlockWithCopy = ({ code, language }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy: ", err);
+      console.error('Failed to copy:', err);
     }
   };
 
+  const handleOpenModal = () => {
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+  };
+
   return (
-    <div className="relative group">
-      <button
-        onClick={handleCopy}
-        className="absolute right-2 top-2 bg-gray-600 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+    <>
+      <div
+        className="relative group cursor-pointer"
+        onClick={handleOpenModal} // Clique abre o modal
       >
-        {copied ? 'Copiado!' : 'Copiar'}
-      </button>
-      <SyntaxHighlighter
-        style={oneDark}
-        language={language}
-        PreTag="div"
-      >
-        {code}
-      </SyntaxHighlighter>
-    </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Evita conflito entre clique no bloco e no botão
+            handleCopy();
+          }}
+          className="absolute right-2 top-2 bg-gray-600 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          {copied ? 'Copiado!' : 'Copiar'}
+        </button>
+        <SyntaxHighlighter
+          style={oneDark}
+          language={language}
+          PreTag="div"
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
+
+      {isModalOpen && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
+        <div className="bg-gray-900 p-6 rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700">
+          <h2 className="text-lg font-bold text-white mb-4">Código</h2>
+          <SyntaxHighlighter style={oneDark} language={language} PreTag="div">
+            {code}
+          </SyntaxHighlighter>
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={handleCloseModal}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
